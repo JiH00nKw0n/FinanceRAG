@@ -1,0 +1,1 @@
+from .sentencetransformers import SentenceTransformersEncoder
