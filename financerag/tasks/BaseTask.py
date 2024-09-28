@@ -1,3 +1,6 @@
+import csv
+import json
+import os
 import logging
 from typing import Optional, List, Dict, Callable, Tuple, Any
 
@@ -130,3 +133,55 @@ class BaseTask(BaseModel):
 
         logger.info("Successfully prepared generation inputs for all queries.")
         return messages_dict
+
+    def save_results(self, top_k: int = 10, output_dir: Optional[str] = None) -> None:
+        # If no output directory is provided, stop saving.
+        if output_dir is None:
+            return
+        # Create the output directory if it does not exist
+        output_dir = os.path.join(output_dir, self.metadata.name)
+        os.makedirs(output_dir, exist_ok=True)
+
+        logger.info(f"Output directory set to: {output_dir}")
+
+        # Path to save the CSV file
+        csv_file_path = os.path.join(output_dir, "results.csv")
+        logger.info(f"Saving top {top_k} results to CSV file: {csv_file_path}")
+
+        # Determine whether to use rerank results or retrieve results
+        final_result = self.rerank_results if self.rerank_results is not None else self.retrieve_results
+
+        # Process the final result if it's not None
+        if final_result is not None:
+            with open(csv_file_path, mode='w', newline='') as csv_file:
+                writer = csv.writer(csv_file)
+                # Write the header to the CSV file
+                writer.writerow(['query_id', 'corpus_id'])
+                logger.info("Writing header ['query_id', 'corpus_id'] to CSV.")
+
+                # For each query_id, save the top_k corpus_ids sorted by score
+                for q_id, doc_scores in final_result.items():
+                    # Sort doc_scores by score and select top_k documents
+                    sorted_docs = sorted(doc_scores.items(), key=lambda item: item[1], reverse=True)[:top_k]
+                    logger.info(f"Saving top {top_k} corpus_id for query_id: {q_id}")
+
+                    # Write the query_id and corpus_id to the CSV
+                    for doc_id, _ in sorted_docs:
+                        writer.writerow([q_id, doc_id])
+                        logger.debug(f"Written query_id: {q_id}, corpus_id: {doc_id} to CSV")
+
+            logger.info(f"Top {top_k} results saved successfully to {csv_file_path}")
+
+        # Save generate_results to JSON Lines format
+        if self.generate_results is not None:
+            jsonl_file_path = os.path.join(output_dir, 'output.jsonl')
+            logger.info(f"Saving generate_results to JSONL file: {jsonl_file_path}")
+
+            with open(jsonl_file_path, 'w') as f:
+                f.writelines(
+                    json.dumps(
+                        {'query_id': q_id, 'answer': answer}
+                    ) + '\n' for q_id, answer in self.generate_results.items()
+                )
+
+            logger.info(f"generate_results saved successfully to {jsonl_file_path}")
