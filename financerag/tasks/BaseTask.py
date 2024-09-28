@@ -1,30 +1,50 @@
 import logging
-from typing import Optional, Union, List, Dict, Callable, Tuple
+from typing import Optional, List, Dict, Callable, Tuple, Any
 
-from datasets import Dataset, IterableDataset
 from pydantic import BaseModel, ConfigDict
 
-from financerag.common.protocols import Retrieval, Reranker, Generator
+from financerag.common import HFDataLoader, Retrieval, Reranker, Generator
 from financerag.tasks.TaskMetadata import TaskMetadata
-
-DatasetType = Union[Dataset, IterableDataset]
 
 logger = logging.getLogger(__name__)
 
 
+# Adapted from https://github.com/embeddings-benchmark/mteb/blob/main/mteb/abstasks/AbsTask.py
 class BaseTask(BaseModel):
     metadata: TaskMetadata
-    dataset: Optional[DatasetType] = None
+    queries: Optional[Dict[str, str]] = None
+    corpus: Optional[Dict[str, Dict[str, str]]] = None
     data_loaded: bool = False
     retrieve_results: Optional[Dict] = None
     rerank_results: Optional[Dict] = None
     generate_results: Optional[Dict] = None
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    def model_post_init(self, __context: Any) -> None:
+        pass
 
-    def load_data(self) -> DatasetType:
-        raise NotImplementedError
+    @property
+    def metadata_dict(self) -> dict[str, Any]:
+        return dict(self.metadata)
 
+    def load_data(self, **kwargs):
+        if self.data_loaded:
+            return
+        self.corpus, self.queries = {}, {}
+        dataset_path = self.metadata_dict["dataset"]["path"]
+
+        corpus, queries = HFDataLoader(
+            hf_repo=dataset_path,
+            streaming=False,
+            keep_in_memory=False,
+        ).load()
+        # Conversion from DataSet
+        self.queries = {query["id"]: query["text"] for query in queries}
+        self.corpus = {
+            doc["id"]: {"title": doc["title"], "text": doc["text"]}
+            for doc in corpus
+        }
+
+        self.data_loaded = True
     def retrieve(
             self,
             retriever: Retrieval,

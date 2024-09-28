@@ -1,8 +1,8 @@
 import logging
 import os
-from typing import Dict, Tuple
+from typing import Tuple
 
-from datasets import load_dataset, Value
+from datasets import load_dataset, Value, Dataset
 
 logger = logging.getLogger(__name__)
 
@@ -20,8 +20,8 @@ class HFDataLoader:
             query_file: str = "queries.jsonl",
             streaming: bool = False,
             keep_in_memory: bool = False):
-        self.corpus = {}
-        self.queries = {}
+        self.corpus = None
+        self.queries = None
         self.hf_repo = hf_repo
         self.subset = subset
         if hf_repo:
@@ -47,19 +47,19 @@ class HFDataLoader:
         if not file_in.endswith(ext):
             raise ValueError("File {} must be present with extension {}".format(file_in, ext))
 
-    def load(self) -> Tuple[Dict[str, str], Dict[str, str]]:
+    def load(self) -> Tuple[Dataset, Dataset]:
 
         if not self.hf_repo:
             self.check(file_in=self.corpus_file, ext="jsonl")
             self.check(file_in=self.query_file, ext="jsonl")
 
-        if not len(self.corpus):
+        if self.corpus is None:
             logger.info("Loading Corpus...")
             self._load_corpus()
             logger.info("Loaded %d TEST Documents.", len(self.corpus))
             logger.info("Doc Example: %s", self.corpus[0])
 
-        if not len(self.queries):
+        if self.queries is None:
             logger.info("Loading Queries...")
             self._load_queries()
 
@@ -68,7 +68,7 @@ class HFDataLoader:
 
         return self.corpus, self.queries
 
-    def load_corpus(self) -> Dict[str, Dict[str, str]]:
+    def load_corpus(self) -> Dataset:
         if not self.hf_repo:
             self.check(file_in=self.corpus_file, ext="jsonl")
 
@@ -100,7 +100,7 @@ class HFDataLoader:
         corpus_ds = corpus_ds.rename_column('_id', 'id')
         corpus_ds = corpus_ds.remove_columns(
             [col for col in corpus_ds.column_names if col not in ['id', 'text', 'title']])
-        self.corpus = corpus_ds
+        self.corpus: Dataset = corpus_ds
 
     def _load_queries(self):
         if self.hf_repo:
@@ -121,4 +121,4 @@ class HFDataLoader:
         queries_ds = queries_ds.cast_column('_id', Value('string'))
         queries_ds = queries_ds.rename_column('_id', 'id')
         queries_ds = queries_ds.remove_columns([col for col in queries_ds.column_names if col not in ['id', 'text']])
-        self.queries = queries_ds
+        self.queries: Dataset = queries_ds
