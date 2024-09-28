@@ -1,19 +1,52 @@
 from typing import List, Protocol, runtime_checkable, Union, Tuple, Literal, Dict, Optional
+
 import numpy as np
 import torch
 
 __all__ = [
     "Encoder",
+    "Lexical",
     "Retrieval",
+    "CrossEncoder",
     "Reranker",
     "Generator",
 ]
 
 
 @runtime_checkable
+class Lexical(Protocol):
+    """
+    Protocol for lexical models that defines an interface for calculating relevance scores
+    between a query and a set of documents. This protocol is designed to be implemented by
+    classes that calculate document-query relevance using lexical methods such as BM25 or
+    other term-based approaches.
+    """
+
+    def get_scores(
+            self,
+            query: List[str],
+            **kwargs
+    ) -> List[float]:
+        """
+        Calculates relevance scores for a given query against a set of documents.
+
+        Args:
+            query (List[str]):
+                A tokenized query in the form of a list of words. This represents the query
+                to be evaluated for relevance against the documents.
+
+        Returns:
+            List[float]:
+                A list of relevance scores, where each score corresponds to the relevance of
+                a document in the indexed corpus to the provided query.
+        """
+        ...
+
+
+@runtime_checkable
 class Encoder(Protocol):
     """
-    Protocol for encoders, providing methods to encode texts, queries, and corpora into dense vectors.
+    Protocol for dense encoders, providing methods to encode texts, queries, and corpora into dense vectors.
     """
 
     def encode_queries(
@@ -54,7 +87,7 @@ class Encoder(Protocol):
 @runtime_checkable
 class Retrieval(Protocol):
     """
-    Protocol for retrievers, providing a method to search for the most relevant documents based on queries.
+    Protocol for retrieval modules, providing a method to search for the most relevant documents based on queries.
     """
 
     def retrieve(
@@ -90,7 +123,7 @@ class Retrieval(Protocol):
 
 
 @runtime_checkable
-class Reranker(Protocol):
+class CrossEncoder(Protocol):
     """
     Protocol for rerankers, providing methods to predict sentence similarity and rank documents based on queries.
     """
@@ -99,6 +132,7 @@ class Reranker(Protocol):
             self,
             sentences: Union[List[Tuple[str, str]], List[List[str]], Tuple[str, str], List[str]],
             batch_size: Optional[int] = None,
+            **kwargs
     ) -> Union[torch.Tensor, np.ndarray]:
         """
         Predicts similarity or relevance scores for pairs of sentences or lists of sentences.
@@ -114,30 +148,47 @@ class Reranker(Protocol):
         """
         ...
 
-    def rank(
+
+@runtime_checkable
+class Reranker(Protocol):
+    """
+    Protocol for reranking modules that defines methods to rerank search results based on queries.
+    """
+
+    def rerank(
             self,
-            query: str,
-            documents: List[str],
+            corpus: Dict[str, Dict[str, str]],
+            queries: Dict[str, str],
+            results: Dict[str, Dict[str, float]],
             top_k: Optional[int] = None,
-            return_documents: Optional[bool] = None,
             batch_size: Optional[int] = None,
-    ) -> List[Dict[Literal["corpus_id", "score", "text"], Union[int, float, str]]]:
+            **kwargs
+    ) -> Dict[str, Dict[str, float]]:
         """
-        Ranks a list of documents based on the relevance to a given query.
+        Reranks the search results based on the given queries and the initial ranking scores.
 
         Args:
-            query (str): The query string to rank documents for.
-            documents (List[str]): A list of document strings to rank.
-            top_k (Optional[int], optional): Number of top documents to return. Defaults to None.
-            return_documents (Optional[bool], optional): Whether to return full document texts. Defaults to None.
-            batch_size (Optional[int], optional): Batch size for processing. Defaults to None.
+            corpus (Dict[str, Dict[str, str]]):
+                A dictionary where keys are document IDs and values are dictionaries containing
+                document metadata, such as content or other features.
+            queries (Dict[str, str]):
+                A dictionary where keys are query IDs and values are the corresponding query texts.
+            results (Dict[str, Dict[str, float]]):
+                A dictionary where keys are query IDs and values are dictionaries mapping document
+                IDs to their initial relevance scores.
+            top_k (Optional[int], optional):
+                The number of top documents to rerank. If None, all documents will be reranked.
+                Defaults to None.
+            batch_size (Optional[int], optional):
+                The batch size to use during reranking. Useful for models that process data in
+                batches. Defaults to None.
+            **kwargs:
+                Additional keyword arguments for custom configurations in the reranking process.
 
         Returns:
-            List[Dict[Literal["corpus_id", "score", "text"], Union[int, float, str]]]:
-                A list of dictionaries, where each dictionary contains:
-                    - 'corpus_id' (int): The document ID.
-                    - 'score' (float): The relevance score.
-                    - 'text' (str): The document text (if return_documents is True).
+            Union[torch.Tensor, np.ndarray]:
+                The reranked relevance scores, either as a PyTorch tensor or a NumPy array,
+                depending on the implementation.
         """
         ...
 

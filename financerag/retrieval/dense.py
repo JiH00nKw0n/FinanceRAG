@@ -67,7 +67,7 @@ def _ensure_tensor(x: Any) -> torch.Tensor:
 # Adapted from https://github.com/beir-cellar/beir/blob/main/beir/retrieval/search/dense/exact_search.py
 class DenseRetriever(BaseRetriever):
     """
-    Dense Retrieval that performs similarity-based search over a corpus.
+    Encoder Retrieval that performs similarity-based search over a corpus.
     """
     model: Encoder
     batch_size: int = 64
@@ -80,7 +80,7 @@ class DenseRetriever(BaseRetriever):
         Validates that the model implements the Encoder protocol.
         """
         if not isinstance(self.model, Encoder):
-            raise TypeError("model must implement the `Encoder` protocol")
+            raise AttributeError("model must implement the `Encoder` protocol")
         return self
 
     def model_post_init(self, __context: Any) -> None:

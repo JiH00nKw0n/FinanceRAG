@@ -1,9 +1,11 @@
-from typing import Dict, Tuple
-import os
 import logging
+import os
+from typing import Dict, Tuple
+
 from datasets import load_dataset, Value
 
 logger = logging.getLogger(__name__)
+
 
 # Adapted from https://github.com/beir-cellar/beir/blob/f062f038c4bfd19a8ca942a9910b1e0d218759d4/beir/datasets/data_loader_hf.py#L10
 class HFDataLoader:

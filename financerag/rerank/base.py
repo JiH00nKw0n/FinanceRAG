@@ -1,9 +1,9 @@
-from typing import Any, Optional, Dict, Literal
+from typing import Any, Optional, Dict
 
 from pydantic import BaseModel
 
 
-class BaseRetriever(BaseModel):
+class BaseReranker(BaseModel):
     model: Any
     results: Optional[Dict[str, Any]] = None
 
@@ -11,12 +11,13 @@ class BaseRetriever(BaseModel):
         if self.results is None:
             self.results = {}
 
-    def retrieve(
+    def rerank(
             self,
-            corpus: Dict[str, Dict[Literal["id", "title", "text"], str]],
-            queries: Dict[Literal["id", "text"], str],
+            corpus: Dict[str, Dict[str, str]],
+            queries: Dict[str, str],
+            results: Dict[str, Dict[str, float]],
             top_k: Optional[int] = None,
-            return_sorted: bool = False,
+            batch_size: Optional[int] = None,
             **kwargs
     ) -> Dict[str, Dict[str, float]]:
         raise NotImplementedError
