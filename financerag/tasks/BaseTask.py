@@ -56,7 +56,7 @@ class BaseTask(BaseModel):
             retriever: Retrieval,
             top_k: Optional[int] = 100,
             **kwargs
-    ):
+    ) -> Dict[str, Dict[str, float]]:
         if not isinstance(retriever, Retrieval):
             raise AttributeError("model must implement the `Retrieval` protocol")
         self.retrieve_results = retriever.retrieve(queries=self.queries, corpus=self.corpus, top_k=top_k, **kwargs)
@@ -91,7 +91,7 @@ class BaseTask(BaseModel):
             results: Optional[Dict] = None,
             prepare_messages: Optional[Callable] = None,
             **kwargs
-    ):
+    ) -> Dict[str, str]:
         if not isinstance(model, Generator):
             raise AttributeError("model must implement the `Generator` protocol")
 
