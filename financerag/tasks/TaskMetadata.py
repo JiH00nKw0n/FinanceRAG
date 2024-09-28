@@ -24,8 +24,7 @@ SAMPLE_CREATION_METHOD = Literal[
 ]
 
 TASK_TYPE = Literal[
-    "Retrieval",
-    "Generation",
+    "RAG",
 ]
 
 TASK_CATEGORY = Literal[
@@ -142,23 +141,21 @@ class TaskMetadata(BaseModel):
     sample_creation: Optional[SAMPLE_CREATION_METHOD] = None
     bibtex_citation: Optional[str] = None
 
-    descriptive_stats: dict[METRIC_NAME, dict[SPLIT_NAME, METRIC_VALUE] | None] = {}
-
     def validate_metadata(self) -> None:
         self.dataset_path_is_specified(self.dataset)
 
     @field_validator("dataset")
     def _check_dataset_path_is_specified(
-        cls, dataset: dict[str, Any]
+        self, dataset: dict[str, Any]
     ) -> dict[str, Any]:
-        cls.dataset_path_is_specified(dataset)
+        self.dataset_path_is_specified(dataset)
         return dataset
 
     @field_validator("dataset")
-    def _check_dataset_revision_is_specified(
-        cls, dataset: dict[str, Any]
+    def _check_dataset_subset_is_specified(
+        self, dataset: dict[str, Any]
     ) -> dict[str, Any]:
-        cls.dataset_revision_is_specified(dataset)
+        self.dataset_subset_is_specified(dataset)
         return dataset
 
     @staticmethod
@@ -168,6 +165,13 @@ class TaskMetadata(BaseModel):
             raise ValueError(
                 "You must specify the path to the dataset in the dataset dictionary. "
                 + "See https://huggingface.co/docs/datasets/main/en/package_reference/loading_methods#datasets.load_dataset"
+            )
+
+    @staticmethod
+    def dataset_subset_is_specified(dataset: dict[str, Any]) -> None:
+        if "subset" not in dataset:
+            raise ValueError(
+                "You must explicitly specify a subset for the dataset."
             )
 
     def is_filled(self) -> bool:

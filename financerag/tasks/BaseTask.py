@@ -1,7 +1,7 @@
 import logging
 from typing import Optional, List, Dict, Callable, Tuple, Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 from financerag.common import HFDataLoader, Retrieval, Reranker, Generator
 from financerag.tasks.TaskMetadata import TaskMetadata
@@ -20,7 +20,7 @@ class BaseTask(BaseModel):
     generate_results: Optional[Dict] = None
 
     def model_post_init(self, __context: Any) -> None:
-        pass
+        self.load_data()
 
     @property
     def metadata_dict(self) -> dict[str, Any]:
@@ -31,9 +31,11 @@ class BaseTask(BaseModel):
             return
         self.corpus, self.queries = {}, {}
         dataset_path = self.metadata_dict["dataset"]["path"]
+        subset = self.metadata_dict["dataset"]["subset"]
 
         corpus, queries = HFDataLoader(
             hf_repo=dataset_path,
+            subset=subset,
             streaming=False,
             keep_in_memory=False,
         ).load()
@@ -45,6 +47,7 @@ class BaseTask(BaseModel):
         }
 
         self.data_loaded = True
+
     def retrieve(
             self,
             retriever: Retrieval,
