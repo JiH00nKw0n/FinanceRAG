@@ -61,7 +61,7 @@ class BaseTask(BaseModel):
             raise AttributeError("model must implement the `Retrieval` protocol")
         self.retrieve_results = retriever.retrieve(queries=self.queries, corpus=self.corpus, top_k=top_k, **kwargs)
 
-        return self.results
+        return self.retrieve_results
 
     def rerank(
             self,
@@ -83,7 +83,7 @@ class BaseTask(BaseModel):
             batch_size=batch_size,
             **kwargs)
 
-        return self.results
+        return self.rerank_results
 
     def generate(
             self,

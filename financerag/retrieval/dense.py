@@ -69,7 +69,7 @@ class DenseRetriever(BaseRetriever):
     """
     Encoder Retrieval that performs similarity-based search over a corpus.
     """
-    model: Encoder
+    model: Any
     batch_size: int = 64
     score_functions: Optional[Dict[str, Any]] = None
     corpus_chunk_size: int = 50000

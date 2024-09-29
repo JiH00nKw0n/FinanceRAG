@@ -3,7 +3,7 @@ from .TaskMetadata import TaskMetadata
 
 
 class TATQA(BaseTask):
-    metadata = TaskMetadata(
+    metadata: TaskMetadata = TaskMetadata(
         name="TAT-QA",
         description="TAT-QA: A Question Answering Benchmark on a Hybrid of Tabular and Textual Content in Finance",
         reference="https://github.com/NExTplusplus/TAT-QA",

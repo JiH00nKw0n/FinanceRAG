@@ -3,7 +3,7 @@ from .TaskMetadata import TaskMetadata
 
 
 class FinQA(BaseTask):
-    metadata = TaskMetadata(
+    metadata: TaskMetadata = TaskMetadata(
         name="FinQA",
         description="FinQA: A Dataset of Numerical Reasoning over Financial Data",
         reference="https://github.com/czyssrs/FinQA",

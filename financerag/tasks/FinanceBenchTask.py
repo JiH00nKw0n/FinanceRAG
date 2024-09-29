@@ -3,7 +3,7 @@ from .TaskMetadata import TaskMetadata
 
 
 class FinanceBench(BaseTask):
-    metadata = TaskMetadata(
+    metadata: TaskMetadata = TaskMetadata(
         name="FinanceBench",
         description="FinanceBench: A New Benchmark for Financial Question Answering",
         reference="https://github.com/patronus-ai/financebench",

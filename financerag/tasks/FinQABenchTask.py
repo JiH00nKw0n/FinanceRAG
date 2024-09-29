@@ -3,7 +3,7 @@ from .TaskMetadata import TaskMetadata
 
 
 class FinQABench(BaseTask):
-    metadata = TaskMetadata(
+    metadata: TaskMetadata = TaskMetadata(
         name="FinQABench",
         description="FinQABench: A New QA Benchmark for Finance applications",
         reference="https://huggingface.co/datasets/lighthouzai/finqabench",

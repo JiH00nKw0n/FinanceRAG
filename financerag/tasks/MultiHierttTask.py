@@ -3,7 +3,7 @@ from .TaskMetadata import TaskMetadata
 
 
 class MultiHiertt(BaseTask):
-    metadata = TaskMetadata(
+    metadata: TaskMetadata = TaskMetadata(
         name="MultiHiertt",
         description="MultiHiertt: Numerical Reasoning over Multi Hierarchical Tabular and Textual Data",
         reference="https://github.com/psunlpgroup/MultiHiertt",

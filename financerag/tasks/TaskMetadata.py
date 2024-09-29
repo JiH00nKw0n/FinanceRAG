@@ -6,6 +6,7 @@ from datetime import date
 from typing import Any, Dict, Union, Optional
 
 from pydantic import AnyUrl, BaseModel, BeforeValidator, TypeAdapter, field_validator
+
 from typing_extensions import Annotated, Literal
 
 TASK_SUBTYPE = Literal[
@@ -98,7 +99,6 @@ class TaskMetadata(BaseModel):
         modalities: The input modality of the dataset. In this case, it is set to ["text"], meaning the dataset deals with textual data.
         category: (*Optional*) The category of the task, e.g., "s2p" (sentence-to-paragraph). Corresponds to the TASK_CATEGORY literal.
         reference: (*Optional*) A URL to documentation or a published paper about the task. Must be a valid URL.
-        main_score: The primary evaluation metric for the task, which will be used to compare results (e.g., "accuracy", "F1", "NDCG").
         date: (*Optional*) A tuple containing the start and end dates when the dataset was collected, ensuring the data reflects a certain time frame.
         domains: (*Optional*) The domain(s) of the data, e.g., "Report". Defined as TASK_DOMAIN literals.
         task_subtypes: (*Optional*) Subtypes of the task, providing more specific details (e.g., "Financial retrieval", "Question answering").
@@ -107,8 +107,7 @@ class TaskMetadata(BaseModel):
         dialect: (*Optional*) The dialect of the data, if applicable. Ideally specified as a BCP-47 language tag. Empty if no dialects are present.
         sample_creation: (*Optional*) The method used to create the dataset samples, such as "found", "human-generated", or "LM-generated and verified".
         bibtex_citation: (*Optional*) The BibTeX citation for the dataset. Should be provided if available; otherwise, it is an empty string.
-        descriptive_stats: (*Optional*) A dictionary of descriptive statistics, where keys are metric names (e.g., "avg_character_length") and values represent these metrics for each dataset split.
-        
+
     Methods:
         validate_metadata: Validates that the necessary metadata fields (like dataset path and revision) are specified.
         is_filled: Checks if all required metadata fields are filled in the TaskMetadata instance.
@@ -128,8 +127,6 @@ class TaskMetadata(BaseModel):
     category: Optional[TASK_CATEGORY] = None
     reference: Optional[STR_URL] = None
 
-    main_score: str
-
     date: Optional[tuple[STR_DATE, STR_DATE]] = None
     domains: Optional[list[TASK_DOMAIN]] = None
     task_subtypes: Optional[list[TASK_SUBTYPE]] = None
@@ -141,38 +138,17 @@ class TaskMetadata(BaseModel):
     sample_creation: Optional[SAMPLE_CREATION_METHOD] = None
     bibtex_citation: Optional[str] = None
 
-    def validate_metadata(self) -> None:
-        self.dataset_path_is_specified(self.dataset)
-
     @field_validator("dataset")
-    def _check_dataset_path_is_specified(
-        self, dataset: dict[str, Any]
-    ) -> dict[str, Any]:
-        self.dataset_path_is_specified(dataset)
+    def _check_dataset_path_is_specified(cls, dataset: dict[str, Any]) -> dict[str, Any]:
+        if 'path' not in dataset:
+            raise ValueError("Dataset path must be specified")
         return dataset
 
     @field_validator("dataset")
-    def _check_dataset_subset_is_specified(
-        self, dataset: dict[str, Any]
-    ) -> dict[str, Any]:
-        self.dataset_subset_is_specified(dataset)
+    def _check_dataset_subset_is_specified(cls, dataset: dict[str, Any]) -> dict[str, Any]:
+        if 'subset' not in dataset:
+            raise ValueError("Dataset subset must be specified")
         return dataset
-
-    @staticmethod
-    def dataset_path_is_specified(dataset: dict[str, Any]) -> None:
-        """This method checks that the dataset path is specified."""
-        if "path" not in dataset or dataset["path"] is None:
-            raise ValueError(
-                "You must specify the path to the dataset in the dataset dictionary. "
-                + "See https://huggingface.co/docs/datasets/main/en/package_reference/loading_methods#datasets.load_dataset"
-            )
-
-    @staticmethod
-    def dataset_subset_is_specified(dataset: dict[str, Any]) -> None:
-        if "subset" not in dataset:
-            raise ValueError(
-                "You must explicitly specify a subset for the dataset."
-            )
 
     def is_filled(self) -> bool:
         """Check if all the metadata fields are filled."""
