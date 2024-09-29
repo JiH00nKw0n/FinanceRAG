@@ -6,7 +6,7 @@ from torch import Tensor
 
 
 # Adopted by https://github.com/beir-cellar/beir/blob/main/beir/retrieval/models/sentence_bert.py
-class SentenceTransformersEncoder:
+class SentenceTransformerEncoder:
 
     def __init__(self, model_name_or_path: Union[str, Tuple] = None, **kwargs):
         if isinstance(model_name_or_path, str):
