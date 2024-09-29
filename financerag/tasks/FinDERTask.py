@@ -4,7 +4,7 @@ from .TaskMetadata import TaskMetadata
 
 class FinDER(BaseTask):
     metadata: TaskMetadata = TaskMetadata(
-        name="ConvFinQA",
+        name="FinDER",
         description="Prepared for competition from Linq",
         reference=None,
         dataset={
