@@ -300,12 +300,10 @@ class BaseTask(BaseModel):
                 for q_id, doc_scores in final_result.items():
                     # Sort doc_scores by score and select top_k documents
                     sorted_docs = sorted(doc_scores.items(), key=lambda item: item[1], reverse=True)[:top_k]
-                    logger.info(f"Saving top {top_k} corpus_id for query_id: {q_id}")
 
                     # Write the query_id and corpus_id to the CSV
                     for doc_id, _ in sorted_docs:
                         writer.writerow([q_id, doc_id])
-                        logger.debug(f"Written query_id: {q_id}, corpus_id: {doc_id} to CSV")
 
             logger.info(f"Top {top_k} results saved successfully to {csv_file_path}")
 
