@@ -32,6 +32,8 @@ pip install -r requirements.txt
 
 1. **Initialize Dataset Task**:
    ```python
+   # FinDER for example.
+   # You can use other tasks such as `FinQA`, `TATQA`, etc.
    from financerag.tasks import FinDER
    finder_task = FinDER()
    ```
