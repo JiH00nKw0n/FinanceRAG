@@ -6,7 +6,6 @@ from datetime import date
 from typing import Any, Dict, Union, Optional
 
 from pydantic import AnyUrl, BaseModel, BeforeValidator, TypeAdapter, field_validator
-
 from typing_extensions import Annotated, Literal
 
 TASK_SUBTYPE = Literal[
