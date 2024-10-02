@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 from datetime import date
-from typing import Any, Dict, Union, Optional
+from typing import Any, Dict, Optional, Union
 
 from pydantic import AnyUrl, BaseModel, BeforeValidator, TypeAdapter, field_validator
 from typing_extensions import Annotated, Literal
@@ -13,9 +13,7 @@ TASK_SUBTYPE = Literal[
     "Question answering",
 ]
 
-TASK_DOMAIN = Literal[
-    "Report",
-]
+TASK_DOMAIN = Literal["Report",]
 
 SAMPLE_CREATION_METHOD = Literal[
     "found",
@@ -23,13 +21,9 @@ SAMPLE_CREATION_METHOD = Literal[
     "LM-generated and verified",
 ]
 
-TASK_TYPE = Literal[
-    "RAG",
-]
+TASK_TYPE = Literal["RAG",]
 
-TASK_CATEGORY = Literal[
-    "s2p",  # Sentence-to-paragraph
-]
+TASK_CATEGORY = Literal["s2p",]  # Sentence-to-paragraph
 
 ANNOTATOR_TYPE = Literal[
     "expert-annotated",
@@ -138,14 +132,18 @@ class TaskMetadata(BaseModel):
     bibtex_citation: Optional[str] = None
 
     @field_validator("dataset")
-    def _check_dataset_path_is_specified(cls, dataset: dict[str, Any]) -> dict[str, Any]:
-        if 'path' not in dataset:
+    def _check_dataset_path_is_specified(
+        cls, dataset: dict[str, Any]
+    ) -> dict[str, Any]:
+        if "path" not in dataset:
             raise ValueError("Dataset path must be specified")
         return dataset
 
     @field_validator("dataset")
-    def _check_dataset_subset_is_specified(cls, dataset: dict[str, Any]) -> dict[str, Any]:
-        if 'subset' not in dataset:
+    def _check_dataset_subset_is_specified(
+        cls, dataset: dict[str, Any]
+    ) -> dict[str, Any]:
+        if "subset" not in dataset:
             raise ValueError("Dataset subset must be specified")
         return dataset
 

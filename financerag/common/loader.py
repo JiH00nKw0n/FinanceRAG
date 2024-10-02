@@ -1,8 +1,8 @@
 import logging
-import os
-from typing import Tuple
+from pathlib import Path
+from typing import Optional, Tuple, cast
 
-from datasets import load_dataset, Value, Dataset
+from datasets import Dataset, Value, load_dataset
 
 logger = logging.getLogger(__name__)
 
@@ -34,35 +34,50 @@ class HFDataLoader:
     """
 
     def __init__(
-            self,
-            hf_repo: str = None,
-            data_folder: str = None,
-            subset: str = None,
-            prefix: str = None,
-            corpus_file: str = "corpus.jsonl",
-            query_file: str = "queries.jsonl",
-            streaming: bool = False,
-            keep_in_memory: bool = False):
+        self,
+        hf_repo: Optional[str] = None,
+        data_folder: Optional[str] = None,
+        subset: Optional[str] = None,
+        prefix: Optional[str] = None,
+        corpus_file: str = "corpus.jsonl",
+        query_file: str = "queries.jsonl",
+        streaming: bool = False,
+        keep_in_memory: bool = False,
+    ):
         """
         Initializes the HFDataLoader class.
 
         Args:
             See class-level docstring for description of arguments.
         """
-        self.corpus = None
-        self.queries = None
+        self.corpus: Optional[Dataset] = None
+        self.queries: Optional[Dataset] = None
         self.hf_repo = hf_repo
         self.subset = subset
         if hf_repo:
             logger.warning(
-                "A Hugging Face repository is provided. This will override the data_folder, prefix and *_file arguments.")
+                "A Hugging Face repository is provided. This will override the data_folder, prefix and *_file arguments."
+            )
         else:
+            if (data_folder is None) or (subset is None):
+                raise ValueError(
+                    "A Hugging Face repository or local directory required."
+                )
+
             # Set up local file paths
             if prefix:
                 query_file = prefix + "_" + query_file
 
-            self.corpus_file = os.path.join(data_folder, subset, corpus_file) if data_folder else corpus_file
-            self.query_file = os.path.join(data_folder, subset, query_file) if data_folder else query_file
+            self.corpus_file = (
+                (Path(data_folder) / subset / corpus_file).as_posix()
+                if data_folder
+                else corpus_file
+            )
+            self.query_file = (
+                (Path(data_folder) / subset / query_file).as_posix()
+                if data_folder
+                else query_file
+            )
         self.streaming = streaming
         self.keep_in_memory = keep_in_memory
 
@@ -78,11 +93,15 @@ class HFDataLoader:
         Raises:
             `ValueError`: If the file does not exist or if the extension does not match.
         """
-        if not os.path.exists(file_in):
-            raise ValueError("File {} not present! Please provide accurate file.".format(file_in))
+        if not Path(file_in).exists():
+            raise ValueError(
+                "File {} not present! Please provide accurate file.".format(file_in)
+            )
 
         if not file_in.endswith(ext):
-            raise ValueError("File {} must be present with extension {}".format(file_in, ext))
+            raise ValueError(
+                "File {} must be present with extension {}".format(file_in, ext)
+            )
 
     def load(self) -> Tuple[Dataset, Dataset]:
         """
@@ -99,12 +118,14 @@ class HFDataLoader:
         if self.corpus is None:
             logger.info("Loading Corpus...")
             self._load_corpus()
+            self.corpus = cast(Dataset, self.corpus)
             logger.info("Loaded %d TEST Documents.", len(self.corpus))
             logger.info("Doc Example: %s", self.corpus[0])
 
         if self.queries is None:
             logger.info("Loading Queries...")
             self._load_queries()
+            self.queries = cast(Dataset, self.queries)
 
         logger.info("Loaded %d TEST Queries.", len(self.queries))
         logger.info("Query Example: %s", self.queries[0])
@@ -121,9 +142,10 @@ class HFDataLoader:
         if not self.hf_repo:
             self.check(file_in=self.corpus_file, ext="jsonl")
 
-        if not len(self.corpus):
+        if (self.corpus is None) or (not len(self.corpus)):
             logger.info("Loading Corpus...")
             self._load_corpus()
+            self.corpus = cast(Dataset, self.corpus)
             logger.info("Loaded %d Documents.", len(self.corpus))
             logger.info("Doc Example: %s", self.corpus[0])
 
@@ -138,22 +160,29 @@ class HFDataLoader:
             corpus_ds = load_dataset(
                 path=self.hf_repo,
                 name=self.subset,
-                split='corpus',
+                split="corpus",
                 keep_in_memory=self.keep_in_memory,
-                streaming=self.streaming
+                streaming=self.streaming,
             )
         else:
             corpus_ds = load_dataset(
-                'json',
+                "json",
                 data_files=self.corpus_file,
                 streaming=self.streaming,
-                keep_in_memory=self.keep_in_memory
+                keep_in_memory=self.keep_in_memory,
             )
-        corpus_ds = corpus_ds.cast_column('_id', Value('string'))
-        corpus_ds = corpus_ds.rename_column('_id', 'id')
+
+        corpus_ds = cast(Dataset, corpus_ds)
+        corpus_ds = corpus_ds.cast_column("_id", Value("string"))
+        corpus_ds = corpus_ds.rename_column("_id", "id")
         corpus_ds = corpus_ds.remove_columns(
-            [col for col in corpus_ds.column_names if col not in ['id', 'text', 'title']])
-        self.corpus: Dataset = corpus_ds
+            [
+                col
+                for col in corpus_ds.column_names
+                if col not in ["id", "text", "title"]
+            ]
+        )
+        self.corpus = corpus_ds
 
     def _load_queries(self):
         """
@@ -164,18 +193,21 @@ class HFDataLoader:
             queries_ds = load_dataset(
                 path=self.hf_repo,
                 name=self.subset,
-                split='queries',
+                split="queries",
                 keep_in_memory=self.keep_in_memory,
-                streaming=self.streaming
+                streaming=self.streaming,
             )
         else:
             queries_ds = load_dataset(
-                'json',
+                "json",
                 data_files=self.query_file,
                 streaming=self.streaming,
-                keep_in_memory=self.keep_in_memory
+                keep_in_memory=self.keep_in_memory,
             )
-        queries_ds = queries_ds.cast_column('_id', Value('string'))
-        queries_ds = queries_ds.rename_column('_id', 'id')
-        queries_ds = queries_ds.remove_columns([col for col in queries_ds.column_names if col not in ['id', 'text']])
-        self.queries: Dataset = queries_ds
+        queries_ds = cast(Dataset, queries_ds)
+        queries_ds = queries_ds.cast_column("_id", Value("string"))
+        queries_ds = queries_ds.rename_column("_id", "id")
+        queries_ds = queries_ds.remove_columns(
+            [col for col in queries_ds.column_names if col not in ["id", "text"]]
+        )
+        self.queries = queries_ds

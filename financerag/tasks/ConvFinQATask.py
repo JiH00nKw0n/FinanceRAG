@@ -21,9 +21,9 @@ class ConvFinQA(BaseTask):
             "Question answering",
         ],
         license="mit",
-        annotations_creators='expert-annotated',
+        annotations_creators="expert-annotated",
         dialect=[],
-        sample_creation='human-generated',
+        sample_creation="human-generated",
         bibtex_citation="""
             @article{chen2022convfinqa,
                 title={ConvFinQA: Exploring the Chain of Numerical Reasoning in Conversational Finance Question Answering},

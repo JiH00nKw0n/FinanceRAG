@@ -1,4 +1,5 @@
-from typing import List, Protocol, runtime_checkable, Union, Tuple, Literal, Dict, Optional
+import abc
+from typing import Dict, List, Literal, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -13,20 +14,16 @@ __all__ = [
 ]
 
 
-@runtime_checkable
-class Lexical(Protocol):
+class Lexical(abc.ABC):
     """
-    Protocol for lexical models that defines an interface for calculating relevance scores
-    between a query and a set of documents. This protocol is designed to be implemented by
+    Abstract class for lexical models that defines an interface for calculating relevance scores
+    between a query and a set of documents. This abstract class is designed to be implemented by
     classes that calculate document-query relevance using lexical methods such as BM25 or
     other term-based approaches.
     """
 
-    def get_scores(
-            self,
-            query: List[str],
-            **kwargs
-    ) -> List[float]:
+    @abc.abstractmethod
+    def get_scores(self, query: List[str], **kwargs) -> List[float]:
         """
         Calculates relevance scores for a given query against a set of documents.
 
@@ -40,19 +37,17 @@ class Lexical(Protocol):
                 A list of relevance scores, where each score corresponds to the relevance of
                 a document in the indexed corpus to the provided query.
         """
-        ...
+        raise NotImplementedError
 
 
-@runtime_checkable
-class Encoder(Protocol):
+class Encoder(abc.ABC):
     """
-    Protocol for dense encoders, providing methods to encode texts, queries, and corpora into dense vectors.
+    Abstract class for dense encoders, providing methods to encode texts, queries, and corpora into dense vectors.
     """
 
+    @abc.abstractmethod
     def encode_queries(
-            self,
-            queries: List[str],
-            **kwargs
+        self, queries: List[str], **kwargs
     ) -> Union[torch.Tensor, np.ndarray]:
         """
         Encodes a list of queries into dense vector representations.
@@ -64,12 +59,15 @@ class Encoder(Protocol):
         Returns:
             Union[torch.Tensor, np.ndarray]: Encoded queries as a tensor or numpy array.
         """
-        ...
+        raise NotImplementedError
 
     def encode_corpus(
-            self,
-            corpus: Union[List[Dict[Literal['title', 'text'], str]], Dict[Literal['title', 'text'], List]],
-            **kwargs
+        self,
+        corpus: Union[
+            List[Dict[Literal["title", "text"], str]],
+            Dict[Literal["title", "text"], List],
+        ],
+        **kwargs
     ) -> Union[torch.Tensor, np.ndarray]:
         """
         Encodes a list of corpus documents into dense vector representations.
@@ -81,22 +79,22 @@ class Encoder(Protocol):
         Returns:
             Union[torch.Tensor, np.ndarray]: Encoded corpus documents as a tensor or numpy array.
         """
-        ...
+        raise NotImplementedError
 
 
-@runtime_checkable
-class Retrieval(Protocol):
+class Retrieval(abc.ABC):
     """
-    Protocol for retrieval modules, providing a method to search for the most relevant documents based on queries.
+    Abstract class for retrieval modules, providing a method to search for the most relevant documents based on queries.
     """
 
+    @abc.abstractmethod
     def retrieve(
-            self,
-            corpus: Dict[str, Dict[str, str]],
-            queries: Dict[str, str],
-            top_k: Optional[int] = None,
-            score_function: Optional[str] = None,
-            **kwargs
+        self,
+        corpus: Dict[str, Dict[Literal["id", "title", "text"], str]],
+        queries: Dict[Literal["id", "text"], str],
+        top_k: Optional[int] = None,
+        return_sorted: bool = False,
+        **kwargs
     ) -> Dict[str, Dict[str, float]]:
         """
         Searches the corpus for the most relevant documents to the given queries.
@@ -119,20 +117,23 @@ class Retrieval(Protocol):
                 A dictionary where each key is a query ID, and each value is another dictionary mapping document IDs to
                 relevance scores (e.g., {'doc1': 0.9, 'doc2': 0.8}).
         """
-        ...
+        raise NotImplementedError
 
 
-@runtime_checkable
-class CrossEncoder(Protocol):
+
+class CrossEncoder(abc.ABC):
     """
-    Protocol for rerankers, providing methods to predict sentence similarity and rank documents based on queries.
+    Abstract class for rerankers, providing methods to predict sentence similarity and rank documents based on queries.
     """
 
+    @abc.abstractmethod
     def predict(
-            self,
-            sentences: Union[List[Tuple[str, str]], List[List[str]], Tuple[str, str], List[str]],
-            batch_size: Optional[int] = None,
-            **kwargs
+        self,
+        sentences: Union[
+            List[Tuple[str, str]], List[List[str]], Tuple[str, str], List[str]
+        ],
+        batch_size: Optional[int] = None,
+        **kwargs
     ) -> Union[torch.Tensor, np.ndarray]:
         """
         Predicts similarity or relevance scores for pairs of sentences or lists of sentences.
@@ -146,23 +147,23 @@ class CrossEncoder(Protocol):
         Returns:
             Union[torch.Tensor, np.ndarray]: Predicted similarity or relevance scores as a tensor or numpy array.
         """
-        ...
+        raise NotImplementedError
 
 
-@runtime_checkable
-class Reranker(Protocol):
+class Reranker(abc.ABC):
     """
-    Protocol for reranking modules that defines methods to rerank search results based on queries.
+    Abstract class for reranking modules that defines methods to rerank search results based on queries.
     """
 
+    @abc.abstractmethod
     def rerank(
-            self,
-            corpus: Dict[str, Dict[str, str]],
-            queries: Dict[str, str],
-            results: Dict[str, Dict[str, float]],
-            top_k: Optional[int] = None,
-            batch_size: Optional[int] = None,
-            **kwargs
+        self,
+        corpus: Dict[str, Dict[str, str]],
+        queries: Dict[str, str],
+        results: Dict[str, Dict[str, float]],
+        top_k: Optional[int] = None,
+        batch_size: Optional[int] = None,
+        **kwargs
     ) -> Dict[str, Dict[str, float]]:
         """
         Reranks the search results based on the given queries and the initial ranking scores.
@@ -190,19 +191,17 @@ class Reranker(Protocol):
                 The reranked relevance scores, either as a PyTorch tensor or a NumPy array,
                 depending on the implementation.
         """
-        ...
+        raise NotImplementedError
 
 
-@runtime_checkable
-class Generator(Protocol):
+class Generator(abc.ABC):
     """
-    Protocol for text generators, providing methods for generating text completions in a chat-like interface.
+    Abstract class for text generators, providing methods for generating text completions in a chat-like interface.
     """
 
+    @abc.abstractmethod
     def generation(
-            self,
-            messages: Dict[str, List[Dict[str, str]]],
-            **kwargs
+        self, messages: Dict[str, List[Dict[str, str]]], **kwargs
     ) -> Dict[str, str]:
         """
         Generates a chat completion based on a sequence of messages.
@@ -219,4 +218,4 @@ class Generator(Protocol):
                 - 'query_id' (str): The query ID as a key.
                 - 'answer' (str): The generated text content as a value.
         """
-        ...
+        raise NotImplementedError

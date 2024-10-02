@@ -1,4 +1,4 @@
-from typing import Any, Optional, Dict, List
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -40,9 +40,7 @@ class BaseGenerator(BaseModel):
             self.results = {}
 
     def generation(
-            self,
-            messages: Dict[str, List[Dict[str, str]]],
-            **kwargs
+        self, messages: Dict[str, List[Dict[str, str]]], **kwargs
     ) -> Dict[str, str]:
         """
         Abstract method to generate text based on input messages.

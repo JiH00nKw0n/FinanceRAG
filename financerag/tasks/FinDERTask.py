@@ -21,8 +21,8 @@ class FinDER(BaseTask):
             "Question answering",
         ],
         license=None,
-        annotations_creators='expert-annotated',
+        annotations_creators="expert-annotated",
         dialect=[],
-        sample_creation='human-generated',
+        sample_creation="human-generated",
         bibtex_citation=None,
     )

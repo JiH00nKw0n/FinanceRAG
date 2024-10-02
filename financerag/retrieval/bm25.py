@@ -1,20 +1,24 @@
 import logging
-from typing import Any, Dict, Literal, Optional, Callable, List
+from typing import Any, Callable, Dict, List, Literal, Optional
 
 import numpy as np
 from nltk.tokenize import word_tokenize
-from pydantic import model_validator
+from pydantic import Field, model_validator
 
 from financerag.common import Lexical
+
 from .base import BaseRetriever
 
 logger = logging.getLogger(__name__)
 
 
-class BM25Retriever(BaseRetriever):
-    tokenizer: Optional[Callable[[List[str]], Any]] = None
+def tokenize_list(input_list: List[str]) -> List[List[str]]:
+    return list(map(word_tokenize, input_list))
 
-    @model_validator(mode='after')
+class BM25Retriever(BaseRetriever):
+    tokenizer: Callable[[List[str]], List[List[str]]] = Field(default=tokenize_list)
+
+    @model_validator(mode="after")
     def check_model(self):
         """
         Validates that the model implements the Encoder protocol.
@@ -23,20 +27,13 @@ class BM25Retriever(BaseRetriever):
             raise TypeError("model must implement the `Lexical` protocol")
         return self
 
-    def model_post_init(self, __context: Any) -> None:
-        super().model_post_init(__context)
-        if self.tokenizer is None:
-            def tokenize_list(input_list: list[str]) -> list[list[str]]:
-                return list(map(word_tokenize, input_list))
-
-            self.tokenizer = tokenize_list
-
     def retrieve(
-            self,
-            corpus: Dict[str, Dict[Literal["id", "title", "text"], str]],
-            queries: Dict[Literal["id", "text"], str],
-            top_k: Optional[int] = None,
-            **kwargs
+        self,
+        corpus: Dict[str, Dict[Literal["id", "title", "text"], str]],
+        queries: Dict[Literal["id", "text"], str],
+        top_k: Optional[int] = None,
+        return_sorted: bool = False,
+        **kwargs
     ) -> Dict[str, Dict[str, float]]:
 
         query_ids = list(queries.keys())
@@ -49,16 +46,15 @@ class BM25Retriever(BaseRetriever):
 
         corpus_lower = [
             (
-                    corpus[cid]["title"] + ' ' + corpus[cid]["text"]
-            ).strip() if "title" in corpus else corpus[cid]["text"].strip() for cid in corpus_ids
+                (corpus[cid]["title"] + " " + corpus[cid]["text"]).strip()
+                if "title" in corpus
+                else corpus[cid]["text"].strip()
+            )
+            for cid in corpus_ids
         ]
 
         logger.info("Prepare Lexical model with ...")
-        model = self.model(
-            corpus=corpus_lower,
-            tokenizer=self.tokenizer,
-            **kwargs
-        )
+        model = self.model(corpus=corpus_lower, tokenizer=self.tokenizer, **kwargs)
 
         logger.info("...")
         for qid, query in zip(query_ids, query_lower_tokens):
