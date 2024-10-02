@@ -19,11 +19,19 @@ class CrossEncoderReranker(Reranker):
     `CrossEncoder` protocol, ensuring it is compatible with `sentence-transformers` cross-encoder models.
 
     Methods:
-        - rerank: Takes in a corpus, queries, and initial retrieval results, and reranks
-                  the top-k documents using the cross-encoder model.
+        rerank:
+            Takes in a corpus, queries, and initial retrieval results, and reranks
+            the top-k documents using the cross-encoder model.
     """
 
     def __init__(self, model: CrossEncoder):
+        """
+        Initializes the `CrossEncoderReranker` class with a cross-encoder model.
+
+        Args:
+            model (`CrossEncoder`):
+                A cross-encoder model implementing the `CrossEncoder` protocol from the `sentence-transformers` library.
+        """
         self.model: CrossEncoder = model
         self.results: Dict[str, Dict[str, float]] = {}
 
@@ -32,11 +40,34 @@ class CrossEncoderReranker(Reranker):
             corpus: Dict[str, Dict[str, str]],
             queries: Dict[str, str],
             results: Dict[str, Dict[str, float]],
-            top_k: Optional[int] = None,
+            top_k: int,
             batch_size: Optional[int] = None,
             **kwargs
     ) -> Dict[str, Dict[str, float]]:
+        """
+        Reranks the top-k documents for each query based on cross-encoder model predictions.
 
+        Args:
+            corpus (`Dict[str, Dict[str, str]]`):
+                A dictionary representing the corpus, where each key is a document ID and each value is a dictionary
+                containing the title and text fields of the document.
+            queries (`Dict[str, str]`):
+                A dictionary containing query IDs as keys and the corresponding query texts as values.
+            results (`Dict[str, Dict[str, float]]`):
+                A dictionary containing query IDs and the initial retrieval results. Each query ID is mapped to another
+                dictionary where document IDs are keys and initial retrieval scores are values.
+            top_k (`int`):
+                The number of top documents to rerank for each query.
+            batch_size (`Optional[int]`, *optional*):
+                The batch size used when passing the query-document pairs through the cross-encoder model.
+                Defaults to None.
+            **kwargs:
+                Additional arguments passed to the cross-encoder model during prediction.
+
+        Returns:
+            `Dict[str, Dict[str, float]]`:
+                A dictionary containing query IDs as keys and dictionaries of reranked document IDs and their scores as values.
+        """
         sentence_pairs, pair_ids = [], []
 
         for query_id in results:
@@ -63,7 +94,7 @@ class CrossEncoderReranker(Reranker):
                     sentence_pairs.append([queries[query_id], corpus_text])
 
         #### Starting to Rerank using cross-attention
-        logging.info("Starting To Rerank Top-{}....".format(top_k))
+        logger.info(f"Starting To Rerank Top-{top_k}....")
         rerank_scores = [
             float(score)
             for score in self.model.predict(

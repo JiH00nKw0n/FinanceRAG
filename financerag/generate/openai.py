@@ -15,8 +15,23 @@ logger = logging.getLogger(__name__)
 
 
 class OpenAIGenerator(Generator):
+    """
+    A class that interfaces with the OpenAI API to generate responses using a specified model. It implements the
+    `Generator` protocol and supports generating responses in parallel using multiple processes.
+
+    Args:
+        model_name (`str`):
+            The name of the OpenAI model to use for generating responses (e.g., "gpt-4", "gpt-3.5-turbo").
+    """
 
     def __init__(self, model_name: str):
+        """
+        Initializes the OpenAIGenerator with the specified model name.
+
+        Args:
+            model_name (`str`):
+                The OpenAI model name used to generate responses.
+        """
         self.model_name: str = model_name
         self.results: Dict = {}
 
@@ -24,11 +39,16 @@ class OpenAIGenerator(Generator):
             self, args: Tuple[str, List[ChatCompletionMessageParam], Dict[str, Any]]
     ) -> Tuple[str, str]:
         """
-        Internal method to process a single query with the OpenAI model.
+        Internal method to process a single query using the OpenAI model. It sends the query and messages to the
+        OpenAI API and retrieves the response.
+
         Args:
-            args (tuple): Contains query ID, messages, model name, and kwargs.
+            args (`Tuple[str, List[ChatCompletionMessageParam], Dict[str, Any]]`):
+                Contains the query ID, a list of messages (query), and additional arguments for the model.
+
         Returns:
-            tuple: Contains the query ID and the generated response.
+            `Tuple[str, str]`:
+                A tuple containing the query ID and the generated response.
         """
         q_id, messages, kwargs = args
         temperature = kwargs.pop("temperature", 1.0)
@@ -40,7 +60,7 @@ class OpenAIGenerator(Generator):
 
         client = openai.OpenAI()
         response = client.chat.completions.create(
-            model=self.name,
+            model=self.model_name,
             messages=messages,
             temperature=temperature,
             top_p=top_p,
@@ -58,13 +78,21 @@ class OpenAIGenerator(Generator):
             **kwargs,
     ) -> Dict[str, str]:
         """
-        Generate responses for the given messages using the OpenAI model.
+        Generate responses for the given messages using the OpenAI model. This method supports parallel processing
+        using multiprocessing to speed up the generation process for multiple queries.
+
         Args:
-            messages (Dict[str, List[Dict[str, str]]]): A dictionary with query IDs and associated messages.
-            num_processes (int): Number of processes to use for parallel processing.
-            **kwargs: Additional arguments for OpenAI model generation.
+            messages (`Dict[str, List[Dict[str, str]]]`):
+                A dictionary where the keys are query IDs, and the values are lists of dictionaries representing the
+                messages (queries).
+            num_processes (`int`, *optional*, defaults to `multiprocessing.cpu_count()`):
+                The number of processes to use for parallel generation.
+            **kwargs:
+                Additional keyword arguments for the OpenAI model (e.g., temperature, top_p, max_tokens).
+
         Returns:
-            Dict[str, str]: A dictionary containing the query IDs and generated responses.
+            `Dict[str, str]`:
+                A dictionary where each key is a query ID, and the value is the generated response.
         """
         logger.info(
             f"Starting generation for {len(messages)} queries using {num_processes} processes..."
