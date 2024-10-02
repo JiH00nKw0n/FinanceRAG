@@ -21,9 +21,9 @@ class FinQA(BaseTask):
             "Question answering",
         ],
         license="mit",
-        annotations_creators='expert-annotated',
+        annotations_creators="expert-annotated",
         dialect=[],
-        sample_creation='human-generated',
+        sample_creation="human-generated",
         bibtex_citation="""
             @article{chen2021finqa,
                 title={FinQA: A Dataset of Numerical Reasoning over Financial Data},

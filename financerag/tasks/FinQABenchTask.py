@@ -21,8 +21,8 @@ class FinQABench(BaseTask):
             "Question answering",
         ],
         license="apache-2.0",
-        annotations_creators='LM-generated and reviewed',
+        annotations_creators="LM-generated and reviewed",
         dialect=[],
-        sample_creation='LM-generated and verified',
+        sample_creation="LM-generated and verified",
         bibtex_citation=None,
     )

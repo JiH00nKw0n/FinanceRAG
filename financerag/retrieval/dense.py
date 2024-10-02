@@ -1,11 +1,12 @@
 import heapq
 import logging
-from typing import Literal, Dict, Optional, Any
+from typing import Any, Callable, Dict, Literal, Optional
 
 import torch
-from pydantic import model_validator
+from pydantic import Field, model_validator
 
 from financerag.common.protocols import Encoder
+
 from .base import BaseRetriever
 
 logger = logging.getLogger(__name__)
@@ -26,8 +27,10 @@ def cos_sim(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     """
     a = _ensure_tensor(a)
     b = _ensure_tensor(b)
-    return torch.mm(torch.nn.functional.normalize(a, p=2, dim=1),
-                    torch.nn.functional.normalize(b, p=2, dim=1).transpose(0, 1))
+    return torch.mm(
+        torch.nn.functional.normalize(a, p=2, dim=1),
+        torch.nn.functional.normalize(b, p=2, dim=1).transpose(0, 1),
+    )
 
 
 @torch.no_grad()
@@ -69,12 +72,15 @@ class DenseRetriever(BaseRetriever):
     """
     Encoder Retrieval that performs similarity-based search over a corpus.
     """
+
     model: Any
     batch_size: int = 64
-    score_functions: Optional[Dict[str, Any]] = None
+    score_functions: Dict[str, Callable[[torch.Tensor, torch.Tensor], torch.Tensor]] = (
+        Field(default_factory=lambda: {"cos_sim": cos_sim, "dot": dot_score})
+    )
     corpus_chunk_size: int = 50000
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def check_model(self):
         """
         Validates that the model implements the Encoder protocol.
@@ -84,21 +90,16 @@ class DenseRetriever(BaseRetriever):
         return self
 
     def model_post_init(self, __context: Any) -> None:
-        """
-        Initializes score functions if not provided.
-        """
         super().model_post_init(__context)
-        if self.score_functions is None:
-            self.score_functions = {'cos_sim': cos_sim, 'dot': dot_score}
 
     def retrieve(
-            self,
-            corpus: Dict[str, Dict[Literal["title", "text"], str]],
-            queries: Dict[str, str],
-            top_k: Optional[int] = None,
-            return_sorted: bool = False,
-            score_function: Optional[str] = 'cos_sim',
-            **kwargs
+        self,
+        corpus: Dict[str, Dict[Literal["id", "title", "text"], str]],
+        queries: Dict[Literal["id", "text"], str],
+        top_k: Optional[int] = None,
+        return_sorted: bool = False,
+        score_function: Literal["cos_sim", "dot"] = "cos_sim",
+        **kwargs,
     ) -> Dict[str, Dict[str, float]]:
         """
         Retrieves the top-k most relevant documents from the corpus based on the given queries.
@@ -130,43 +131,62 @@ class DenseRetriever(BaseRetriever):
 
         logger.info("Sorting corpus by document length...")
         sorted_corpus_ids = sorted(
-            corpus, key=lambda k: len(corpus[k].get("title", "") + corpus[k].get("text", "")), reverse=True)
+            corpus,
+            key=lambda k: len(corpus[k].get("title", "") + corpus[k].get("text", "")),
+            reverse=True,
+        )
 
         logger.info("Encoding corpus in batches... This may take a while.")
-        result_heaps = {qid: [] for qid in query_ids}  # Keep only the top-k docs for each query
-        corpus = [corpus[cid] for cid in sorted_corpus_ids]
+        result_heaps = {
+            qid: [] for qid in query_ids
+        }  # Keep only the top-k docs for each query
 
-        for batch_num, start_idx in enumerate(range(0, len(corpus), self.corpus_chunk_size)):
-            logger.info(f"Encoding batch {batch_num + 1}/{len(range(0, len(corpus), self.corpus_chunk_size))}...")
-            end_idx = min(start_idx + self.corpus_chunk_size, len(corpus))
+        corpus_list = [corpus[cid] for cid in sorted_corpus_ids]
+
+        for batch_num, start_idx in enumerate(
+            range(0, len(corpus), self.corpus_chunk_size)
+        ):
+            logger.info(
+                f"Encoding batch {batch_num + 1}/{len(range(0, len(corpus_list), self.corpus_chunk_size))}..."
+            )
+            end_idx = min(start_idx + self.corpus_chunk_size, len(corpus_list))
 
             # Encode chunk of corpus
             sub_corpus_embeddings = self.model.encode_corpus(
-                corpus[start_idx:end_idx],
-                batch_size=self.batch_size,
-                **kwargs
+                corpus_list[start_idx:end_idx], batch_size=self.batch_size, **kwargs
             )
 
             # Compute similarities using either cosine-similarity or dot product
-            cos_scores = self.score_functions[score_function](query_embeddings, sub_corpus_embeddings)
+            cos_scores = self.score_functions[score_function](
+                query_embeddings, sub_corpus_embeddings
+            )
             cos_scores[torch.isnan(cos_scores)] = -1
 
             # Get top-k values
             cos_scores_top_k_values, cos_scores_top_k_idx = torch.topk(
-                cos_scores, min(top_k + 1, len(cos_scores[1])), dim=1, largest=True, sorted=return_sorted)
+                cos_scores,
+                min(top_k + 1, len(cos_scores[1])),
+                dim=1,
+                largest=True,
+                sorted=return_sorted,
+            )
 
             cos_scores_top_k_values = cos_scores_top_k_values.cpu().tolist()
             cos_scores_top_k_idx = cos_scores_top_k_idx.cpu().tolist()
 
             for query_itr in range(len(query_embeddings)):
                 query_id = query_ids[query_itr]
-                for sub_corpus_id, score in zip(cos_scores_top_k_idx[query_itr], cos_scores_top_k_values[query_itr]):
+                for sub_corpus_id, score in zip(
+                    cos_scores_top_k_idx[query_itr], cos_scores_top_k_values[query_itr]
+                ):
                     corpus_id = sorted_corpus_ids[start_idx + sub_corpus_id]
                     if corpus_id != query_id:
                         if len(result_heaps[query_id]) < top_k:
                             heapq.heappush(result_heaps[query_id], (score, corpus_id))
                         else:
-                            heapq.heappushpop(result_heaps[query_id], (score, corpus_id))
+                            heapq.heappushpop(
+                                result_heaps[query_id], (score, corpus_id)
+                            )
 
         for qid in result_heaps:
             for score, corpus_id in result_heaps[qid]:

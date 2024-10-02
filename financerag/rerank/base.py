@@ -1,4 +1,4 @@
-from typing import Any, Optional, Dict
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel
 
@@ -39,13 +39,13 @@ class BaseReranker(BaseModel):
             self.results = {}
 
     def rerank(
-            self,
-            corpus: Dict[str, Dict[str, str]],
-            queries: Dict[str, str],
-            results: Dict[str, Dict[str, float]],
-            top_k: Optional[int] = None,
-            batch_size: Optional[int] = None,
-            **kwargs
+        self,
+        corpus: Dict[str, Dict[str, str]],
+        queries: Dict[str, str],
+        results: Dict[str, Dict[str, float]],
+        top_k: Optional[int] = None,
+        batch_size: Optional[int] = None,
+        **kwargs
     ) -> Dict[str, Dict[str, float]]:
         """
         Abstract method to perform reranking of retrieval results. This method should be

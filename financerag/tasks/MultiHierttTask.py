@@ -21,9 +21,9 @@ class MultiHiertt(BaseTask):
             "Question answering",
         ],
         license="mit",
-        annotations_creators='expert-annotated',
+        annotations_creators="expert-annotated",
         dialect=[],
-        sample_creation='human-generated',
+        sample_creation="human-generated",
         bibtex_citation="""
             @inproceedings{zhao-etal-2022-multihiertt,
                 title = "{M}ulti{H}iertt: Numerical Reasoning over Multi Hierarchical Tabular and Textual Data",

@@ -1,4 +1,4 @@
-from typing import Any, Optional, Dict, Literal, List, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 import numpy as np
 from pydantic import BaseModel
@@ -38,15 +38,15 @@ class BaseRetriever(BaseModel):
         If the `results` attribute is `None`, this method initializes it as an empty dictionary.
         """
         if self.results is None:
-            self.results = {}
+            self.results = dict()
 
     def retrieve(
-            self,
-            corpus: Dict[str, Dict[Literal["id", "title", "text"], str]],
-            queries: Dict[Literal["id", "text"], str],
-            top_k: Optional[int] = None,
-            return_sorted: bool = False,
-            **kwargs
+        self,
+        corpus: Dict[str, Dict[Literal["id", "title", "text"], str]],
+        queries: Dict[Literal["id", "text"], str],
+        top_k: Optional[int] = None,
+        return_sorted: bool = False,
+        **kwargs
     ) -> Dict[str, Dict[str, float]]:
         """
         Abstract method to retrieve relevant documents from the corpus based on input queries.
@@ -105,10 +105,7 @@ class BaseEncoder(BaseModel):
     doc_prompt: Optional[str] = None
 
     def encode_queries(
-            self,
-            queries: List[str],
-            batch_size: int = 16,
-            **kwargs
+        self, queries: List[str], batch_size: int = 16, **kwargs
     ) -> Union[List[Tensor], np.ndarray, Tensor]:
         """
         Abstract method to encode a list of queries into embeddings. This method should be overridden by subclasses.
@@ -132,10 +129,13 @@ class BaseEncoder(BaseModel):
         raise NotImplementedError
 
     def encode_corpus(
-            self,
-            corpus: Union[List[Dict[Literal['title', 'text'], str]], Dict[Literal['title', 'text'], List]],
-            batch_size: int = 16,
-            **kwargs
+        self,
+        corpus: Union[
+            List[Dict[Literal["title", "text"], str]],
+            Dict[Literal["title", "text"], List],
+        ],
+        batch_size: int = 16,
+        **kwargs
     ) -> Union[List[Tensor], np.ndarray, Tensor]:
         """
         Abstract method to encode a corpus of documents into embeddings. This method should be overridden by subclasses.

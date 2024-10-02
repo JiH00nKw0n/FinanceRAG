@@ -1,9 +1,2 @@
 from .loader import HFDataLoader
-from .protocols import (
-    Encoder,
-    Lexical,
-    Retrieval,
-    CrossEncoder,
-    Reranker,
-    Generator
-)
+from .protocols import CrossEncoder, Encoder, Generator, Lexical, Reranker, Retrieval

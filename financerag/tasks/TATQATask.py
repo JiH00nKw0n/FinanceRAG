@@ -21,9 +21,9 @@ class TATQA(BaseTask):
             "Question answering",
         ],
         license="mit",
-        annotations_creators='human-annotated',
+        annotations_creators="human-annotated",
         dialect=[],
-        sample_creation='human-generated',
+        sample_creation="human-generated",
         bibtex_citation="""
             @inproceedings{zhu-etal-2021-tat,
                 title = "{TAT}-{QA}: A Question Answering Benchmark on a Hybrid of Tabular and Textual Content in Finance",

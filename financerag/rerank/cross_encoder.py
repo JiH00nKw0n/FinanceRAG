@@ -4,6 +4,7 @@ from typing import Dict, Optional
 from pydantic import model_validator
 
 from financerag.common import CrossEncoder
+
 from .base import BaseReranker
 
 logger = logging.getLogger(__name__)
@@ -26,7 +27,7 @@ class CrossEncoderReranker(BaseReranker):
                   the top-k documents using the cross-encoder model.
     """
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def check_model(self):
         """
         Validates that the model implements the CrossEncoder protocol.
@@ -36,34 +37,48 @@ class CrossEncoderReranker(BaseReranker):
         return self
 
     def rerank(
-            self,
-            corpus: Dict[str, Dict[str, str]],
-            queries: Dict[str, str],
-            results: Dict[str, Dict[str, float]],
-            top_k: Optional[int] = None,
-            batch_size: Optional[int] = None,
-            **kwargs
+        self,
+        corpus: Dict[str, Dict[str, str]],
+        queries: Dict[str, str],
+        results: Dict[str, Dict[str, float]],
+        top_k: Optional[int] = None,
+        batch_size: Optional[int] = None,
+        **kwargs
     ) -> Dict[str, Dict[str, float]]:
 
         sentence_pairs, pair_ids = [], []
 
         for query_id in results:
             if len(results[query_id]) > top_k:
-                for (doc_id, _) in sorted(results[query_id].items(), key=lambda item: item[1], reverse=True)[:top_k]:
+                for doc_id, _ in sorted(
+                    results[query_id].items(), key=lambda item: item[1], reverse=True
+                )[:top_k]:
                     pair_ids.append([query_id, doc_id])
-                    corpus_text = (corpus[doc_id].get("title", "") + " " + corpus[doc_id].get("text", "")).strip()
+                    corpus_text = (
+                        corpus[doc_id].get("title", "")
+                        + " "
+                        + corpus[doc_id].get("text", "")
+                    ).strip()
                     sentence_pairs.append([queries[query_id], corpus_text])
 
             else:
                 for doc_id in results[query_id]:
                     pair_ids.append([query_id, doc_id])
-                    corpus_text = (corpus[doc_id].get("title", "") + " " + corpus[doc_id].get("text", "")).strip()
+                    corpus_text = (
+                        corpus[doc_id].get("title", "")
+                        + " "
+                        + corpus[doc_id].get("text", "")
+                    ).strip()
                     sentence_pairs.append([queries[query_id], corpus_text])
 
         #### Starting to Rerank using cross-attention
         logging.info("Starting To Rerank Top-{}....".format(top_k))
-        rerank_scores = [float(score) for score in
-                         self.model.predict(sentences=sentence_pairs, batch_size=batch_size, **kwargs)]
+        rerank_scores = [
+            float(score)
+            for score in self.model.predict(
+                sentences=sentence_pairs, batch_size=batch_size, **kwargs
+            )
+        ]
 
         #### Reranker results
         self.results = {query_id: {} for query_id in results}
