@@ -1,29 +1,48 @@
-from typing import Dict, List, Literal, Union
+from typing import Dict, List, Literal, Union, Optional, Tuple
 
 import numpy as np
+from sentence_transformers import SentenceTransformer
 from torch import Tensor
 
-from .base import BaseEncoder
+from financerag.common import Encoder
 
 
 # Adopted by https://github.com/beir-cellar/beir/blob/main/beir/retrieval/models/sentence_bert.py
-class SentenceTransformerEncoder(BaseEncoder):
+class SentenceTransformerEncoder(Encoder):
+
+    def __init__(
+            self,
+            model_name_or_path: Union[str, Tuple[str, str]],
+            query_prompt: Optional[str] = None,
+            doc_prompt: Optional[str] = None,
+            **kwargs
+    ):
+        if isinstance(model_name_or_path, str):
+            self.q_model = SentenceTransformer(model_name_or_path, **kwargs)
+            self.doc_model = self.q_model
+        elif isinstance(model_name_or_path, Tuple):
+            self.q_model = SentenceTransformer(model_name_or_path[0], **kwargs)
+            self.doc_model = SentenceTransformer(model_name_or_path[1], **kwargs)
+        else:
+            raise TypeError
+        self.query_prompt = query_prompt
+        self.doc_prompt = doc_prompt
 
     def encode_queries(
-        self, queries: List[str], batch_size: int = 16, **kwargs
+            self, queries: List[str], batch_size: int = 16, **kwargs
     ) -> Union[List[Tensor], np.ndarray, Tensor]:
         if self.query_prompt is not None:
             queries = [self.query_prompt + query for query in queries]
         return self.q_model.encode(queries, batch_size=batch_size, **kwargs)
 
     def encode_corpus(
-        self,
-        corpus: Union[
-            List[Dict[Literal["title", "text"], str]],
-            Dict[Literal["title", "text"], List],
-        ],
-        batch_size: int = 8,
-        **kwargs
+            self,
+            corpus: Union[
+                List[Dict[Literal["title", "text"], str]],
+                Dict[Literal["title", "text"], List],
+            ],
+            batch_size: int = 8,
+            **kwargs
     ) -> Union[List[Tensor], np.ndarray, Tensor]:
         if isinstance(corpus, dict):
             sentences = [

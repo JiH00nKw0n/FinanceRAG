@@ -3,11 +3,8 @@ import logging
 from typing import Any, Callable, Dict, Literal, Optional
 
 import torch
-from pydantic import Field, model_validator
 
-from financerag.common.protocols import Encoder
-
-from .base import BaseRetriever
+from financerag.common.protocols import Encoder, Retrieval
 
 logger = logging.getLogger(__name__)
 
@@ -68,38 +65,34 @@ def _ensure_tensor(x: Any) -> torch.Tensor:
 
 
 # Adapted from https://github.com/beir-cellar/beir/blob/main/beir/retrieval/search/dense/exact_search.py
-class DenseRetriever(BaseRetriever):
+class DenseRetrieval(Retrieval):
     """
     Encoder Retrieval that performs similarity-based search over a corpus.
     """
 
-    model: Any
-    batch_size: int = 64
-    score_functions: Dict[str, Callable[[torch.Tensor, torch.Tensor], torch.Tensor]] = (
-        Field(default_factory=lambda: {"cos_sim": cos_sim, "dot": dot_score})
-    )
-    corpus_chunk_size: int = 50000
-
-    @model_validator(mode="after")
-    def check_model(self):
-        """
-        Validates that the model implements the Encoder protocol.
-        """
-        if not isinstance(self.model, Encoder):
-            raise AttributeError("model must implement the `Encoder` protocol")
-        return self
-
-    def model_post_init(self, __context: Any) -> None:
-        super().model_post_init(__context)
+    def __init__(
+            self,
+            model: Encoder,
+            batch_size: int = 64,
+            score_functions: Dict[str, Callable[[torch.Tensor, torch.Tensor], torch.Tensor]] = None,
+            corpus_chunk_size: int = 50000
+    ):
+        self.model: Encoder = model
+        self.batch_size: int = batch_size
+        if score_functions is None:
+            score_functions = {"cos_sim": cos_sim, "dot": dot_score}
+        self.score_functions: Dict[str, Callable[[torch.Tensor, torch.Tensor], torch.Tensor]] = score_functions
+        self.corpus_chunk_size: int = corpus_chunk_size
+        self.results: Dict = {}
 
     def retrieve(
-        self,
-        corpus: Dict[str, Dict[Literal["id", "title", "text"], str]],
-        queries: Dict[Literal["id", "text"], str],
-        top_k: Optional[int] = None,
-        return_sorted: bool = False,
-        score_function: Literal["cos_sim", "dot"] = "cos_sim",
-        **kwargs,
+            self,
+            corpus: Dict[str, Dict[Literal["title", "text"], str]],
+            queries: Dict[Literal["id", "text"], str],
+            top_k: Optional[int] = None,
+            return_sorted: bool = False,
+            score_function: Literal["cos_sim", "dot"] = "cos_sim",
+            **kwargs,
     ) -> Dict[str, Dict[str, float]]:
         """
         Retrieves the top-k most relevant documents from the corpus based on the given queries.
@@ -144,7 +137,7 @@ class DenseRetriever(BaseRetriever):
         corpus_list = [corpus[cid] for cid in sorted_corpus_ids]
 
         for batch_num, start_idx in enumerate(
-            range(0, len(corpus), self.corpus_chunk_size)
+                range(0, len(corpus), self.corpus_chunk_size)
         ):
             logger.info(
                 f"Encoding batch {batch_num + 1}/{len(range(0, len(corpus_list), self.corpus_chunk_size))}..."
@@ -177,7 +170,7 @@ class DenseRetriever(BaseRetriever):
             for query_itr in range(len(query_embeddings)):
                 query_id = query_ids[query_itr]
                 for sub_corpus_id, score in zip(
-                    cos_scores_top_k_idx[query_itr], cos_scores_top_k_values[query_itr]
+                        cos_scores_top_k_idx[query_itr], cos_scores_top_k_values[query_itr]
                 ):
                     corpus_id = sorted_corpus_ids[start_idx + sub_corpus_id]
                     if corpus_id != query_id:

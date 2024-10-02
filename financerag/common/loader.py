@@ -34,15 +34,15 @@ class HFDataLoader:
     """
 
     def __init__(
-        self,
-        hf_repo: Optional[str] = None,
-        data_folder: Optional[str] = None,
-        subset: Optional[str] = None,
-        prefix: Optional[str] = None,
-        corpus_file: str = "corpus.jsonl",
-        query_file: str = "queries.jsonl",
-        streaming: bool = False,
-        keep_in_memory: bool = False,
+            self,
+            hf_repo: Optional[str] = None,
+            data_folder: Optional[str] = None,
+            subset: Optional[str] = None,
+            prefix: Optional[str] = None,
+            corpus_file: str = "corpus.jsonl",
+            query_file: str = "queries.jsonl",
+            streaming: bool = False,
+            keep_in_memory: bool = False,
     ):
         """
         Initializes the HFDataLoader class.

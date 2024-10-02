@@ -4,8 +4,6 @@ import logging
 import os
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from pydantic import BaseModel
-
 from financerag.common import Generator, HFDataLoader, Reranker, Retrieval
 from financerag.tasks.TaskMetadata import TaskMetadata
 
@@ -13,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 # Adapted from https://github.com/embeddings-benchmark/mteb/blob/main/mteb/abstasks/AbsTask.py
-class BaseTask(BaseModel):
+class BaseTask:
     """
     Base class for handling tasks related to document retrieval, reranking, and generation in the finance domain.
     The class loads data, handles retrieval and reranking operations, and can generate results using a language model.
@@ -49,20 +47,14 @@ class BaseTask(BaseModel):
             Saves the results (retrieval, reranking, and generated) to CSV and JSONL files.
     """
 
-    metadata: TaskMetadata
-    queries: Optional[Dict[str, str]] = None
-    corpus: Optional[Dict[str, Dict[str, str]]] = None
-    retrieve_results: Optional[Dict] = None
-    rerank_results: Optional[Dict] = None
-    generate_results: Optional[Dict] = None
+    def __init__(self, metadata: TaskMetadata):
+        self.metadata: TaskMetadata = metadata
+        self.queries: Optional[Dict[str, str]] = None
+        self.corpus: Optional[Dict[str, Dict[str, str]]] = None
+        self.retrieve_results: Optional[Dict] = None
+        self.rerank_results: Optional[Dict] = None
+        self.generate_results: Optional[Dict] = None
 
-    def model_post_init(self, __context: Any) -> None:
-        """
-        Post-initialization method that automatically loads the data when the model is initialized.
-
-        Args:
-            __context (`Any`): Additional context or configuration for initialization (typically unused).
-        """
         self.load_data()
 
     @property
@@ -100,7 +92,7 @@ class BaseTask(BaseModel):
             }
 
     def retrieve(
-        self, retriever: Retrieval, top_k: Optional[int] = 100, **kwargs
+            self, retriever: Retrieval, top_k: Optional[int] = 100, **kwargs
     ) -> Dict[str, Dict[str, float]]:
         """
         Performs document retrieval using the provided retriever model.
@@ -131,12 +123,12 @@ class BaseTask(BaseModel):
         return self.retrieve_results
 
     def rerank(
-        self,
-        reranker: Reranker,
-        results: Optional[Dict[str, Dict[str, float]]] = None,
-        top_k: Optional[int] = 100,
-        batch_size: Optional[int] = None,
-        **kwargs,
+            self,
+            reranker: Reranker,
+            results: Optional[Dict[str, Dict[str, float]]] = None,
+            top_k: Optional[int] = 100,
+            batch_size: Optional[int] = None,
+            **kwargs,
     ) -> Dict[str, Dict[str, float]]:
         """
         Reranks the retrieved results using the provided reranker model.
@@ -176,11 +168,11 @@ class BaseTask(BaseModel):
         return self.rerank_results
 
     def generate(
-        self,
-        model: Generator,
-        results: Optional[Dict] = None,
-        prepare_messages: Optional[Callable] = None,
-        **kwargs,
+            self,
+            model: Generator,
+            results: Optional[Dict] = None,
+            prepare_messages: Optional[Callable] = None,
+            **kwargs,
     ) -> Dict[str, str]:
         """
         Generates responses based on the highest-scoring documents from either the reranked or retrieved results.
@@ -210,7 +202,7 @@ class BaseTask(BaseModel):
             )
 
             def default_messages(
-                query: str, documents: List[Tuple[str, float]]
+                    query: str, documents: List[Tuple[str, float]]
             ) -> List[Dict]:
                 first_document = max(documents, key=lambda x: x[1])[0]
                 messages = [
@@ -218,8 +210,8 @@ class BaseTask(BaseModel):
                     {
                         "role": "user",
                         "content": f"Document: {first_document}"
-                        f"\nGenerate an answer to the question from the document."
-                        f"\nQuestion: {query}",
+                                   f"\nGenerate an answer to the question from the document."
+                                   f"\nQuestion: {query}",
                     },
                 ]
                 return messages
@@ -243,7 +235,7 @@ class BaseTask(BaseModel):
         return self.generate_results
 
     def prepare_generation_inputs(
-        self, results, prepare_messages
+            self, results, prepare_messages
     ) -> Dict[str, List[dict]]:
         """
         Prepares the input messages required for the generation model.

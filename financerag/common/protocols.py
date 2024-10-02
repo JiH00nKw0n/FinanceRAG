@@ -47,7 +47,7 @@ class Encoder(abc.ABC):
 
     @abc.abstractmethod
     def encode_queries(
-        self, queries: List[str], **kwargs
+            self, queries: List[str], **kwargs
     ) -> Union[torch.Tensor, np.ndarray]:
         """
         Encodes a list of queries into dense vector representations.
@@ -62,12 +62,12 @@ class Encoder(abc.ABC):
         raise NotImplementedError
 
     def encode_corpus(
-        self,
-        corpus: Union[
-            List[Dict[Literal["title", "text"], str]],
-            Dict[Literal["title", "text"], List],
-        ],
-        **kwargs
+            self,
+            corpus: Union[
+                List[Dict[Literal["title", "text"], str]],
+                Dict[Literal["title", "text"], List],
+            ],
+            **kwargs
     ) -> Union[torch.Tensor, np.ndarray]:
         """
         Encodes a list of corpus documents into dense vector representations.
@@ -89,12 +89,12 @@ class Retrieval(abc.ABC):
 
     @abc.abstractmethod
     def retrieve(
-        self,
-        corpus: Dict[str, Dict[Literal["id", "title", "text"], str]],
-        queries: Dict[Literal["id", "text"], str],
-        top_k: Optional[int] = None,
-        return_sorted: bool = False,
-        **kwargs
+            self,
+            corpus: Dict[str, Dict[Literal["id", "title", "text"], str]],
+            queries: Dict[Literal["id", "text"], str],
+            top_k: Optional[int] = None,
+            score_function: Optional[str] = None,
+            **kwargs
     ) -> Dict[str, Dict[str, float]]:
         """
         Searches the corpus for the most relevant documents to the given queries.
@@ -120,7 +120,6 @@ class Retrieval(abc.ABC):
         raise NotImplementedError
 
 
-
 class CrossEncoder(abc.ABC):
     """
     Abstract class for rerankers, providing methods to predict sentence similarity and rank documents based on queries.
@@ -128,12 +127,12 @@ class CrossEncoder(abc.ABC):
 
     @abc.abstractmethod
     def predict(
-        self,
-        sentences: Union[
-            List[Tuple[str, str]], List[List[str]], Tuple[str, str], List[str]
-        ],
-        batch_size: Optional[int] = None,
-        **kwargs
+            self,
+            sentences: Union[
+                List[Tuple[str, str]], List[List[str]], Tuple[str, str], List[str]
+            ],
+            batch_size: Optional[int] = None,
+            **kwargs
     ) -> Union[torch.Tensor, np.ndarray]:
         """
         Predicts similarity or relevance scores for pairs of sentences or lists of sentences.
@@ -157,13 +156,13 @@ class Reranker(abc.ABC):
 
     @abc.abstractmethod
     def rerank(
-        self,
-        corpus: Dict[str, Dict[str, str]],
-        queries: Dict[str, str],
-        results: Dict[str, Dict[str, float]],
-        top_k: Optional[int] = None,
-        batch_size: Optional[int] = None,
-        **kwargs
+            self,
+            corpus: Dict[str, Dict[str, str]],
+            queries: Dict[str, str],
+            results: Dict[str, Dict[str, float]],
+            top_k: Optional[int] = None,
+            batch_size: Optional[int] = None,
+            **kwargs
     ) -> Dict[str, Dict[str, float]]:
         """
         Reranks the search results based on the given queries and the initial ranking scores.
@@ -201,7 +200,7 @@ class Generator(abc.ABC):
 
     @abc.abstractmethod
     def generation(
-        self, messages: Dict[str, List[Dict[str, str]]], **kwargs
+            self, messages: Dict[str, List[Dict[str, str]]], **kwargs
     ) -> Dict[str, str]:
         """
         Generates a chat completion based on a sequence of messages.

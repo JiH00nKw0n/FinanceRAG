@@ -1,6 +1,6 @@
 from .retrieval import (
     BaseRetriever,
-    DenseRetriever,
+    DenseRetrieval,
     BM25Retriever,
     SentenceTransformerEncoder
 )

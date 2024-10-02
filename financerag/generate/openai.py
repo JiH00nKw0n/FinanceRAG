@@ -6,20 +6,22 @@ from typing import Any, Dict, List, Tuple, cast
 
 import openai
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
-from pydantic import Field
 
-from .base import BaseGenerator
+from financerag.common.protocols import Generator
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 logger = logging.getLogger(__name__)
 
 
-class OpenAIGenerator(BaseGenerator):
-    name: str = Field(None, description="The model name of the OpenAI model to be used")
+class OpenAIGenerator(Generator):
+
+    def __init__(self, model_name: str):
+        self.model_name: str = model_name
+        self.results: Dict = {}
 
     def _process_query(
-        self, args: Tuple[str, List[ChatCompletionMessageParam], Dict[str, Any]]
+            self, args: Tuple[str, List[ChatCompletionMessageParam], Dict[str, Any]]
     ) -> Tuple[str, str]:
         """
         Internal method to process a single query with the OpenAI model.
@@ -50,10 +52,10 @@ class OpenAIGenerator(BaseGenerator):
         return q_id, response.choices[0].message.content
 
     def generation(
-        self,
-        messages: Dict[str, List[Dict[str, str]]],
-        num_processes: int = multiprocessing.cpu_count(),  # Number of parallel processes
-        **kwargs,
+            self,
+            messages: Dict[str, List[Dict[str, str]]],
+            num_processes: int = multiprocessing.cpu_count(),  # Number of parallel processes
+            **kwargs,
     ) -> Dict[str, str]:
         """
         Generate responses for the given messages using the OpenAI model.
