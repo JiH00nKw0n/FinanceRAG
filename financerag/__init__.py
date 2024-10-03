@@ -1,6 +1,13 @@
 from .retrieval import (
-    BaseRetriever,
     DenseRetrieval,
     BM25Retriever,
     SentenceTransformerEncoder
+)
+
+from .rerank import (
+    CrossEncoderReranker
+)
+
+from .generate import (
+    OpenAIGenerator
 )
