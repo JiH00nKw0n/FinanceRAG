@@ -1,9 +1,12 @@
+from typing import Optional
+
 from .BaseTask import BaseTask
 from .TaskMetadata import TaskMetadata
 
 
 class FinDER(BaseTask):
-    metadata: TaskMetadata = TaskMetadata(
+    def __init__(self):
+        self.metadata: TaskMetadata = TaskMetadata(
         name="FinDER",
         description="Prepared for competition from Linq",
         reference=None,
@@ -26,3 +29,5 @@ class FinDER(BaseTask):
         sample_creation="human-generated",
         bibtex_citation=None,
     )
+        super().__init__(self.metadata)
+
