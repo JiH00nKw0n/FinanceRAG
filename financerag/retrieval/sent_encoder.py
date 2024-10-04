@@ -1,4 +1,4 @@
-from typing import Dict, List, Literal, Union, Optional, Tuple
+from typing import Dict, List, Literal, Optional, Tuple, Union
 
 import numpy as np
 from sentence_transformers import SentenceTransformer
@@ -30,7 +30,7 @@ class SentenceTransformerEncoder(Encoder):
 
     def encode_queries(
             self, queries: List[str], batch_size: int = 16, **kwargs
-    ) -> Union[List[Tensor], np.ndarray, Tensor]:
+    ) -> Union[np.ndarray, Tensor]:
         if self.query_prompt is not None:
             queries = [self.query_prompt + query for query in queries]
         return self.q_model.encode(queries, batch_size=batch_size, **kwargs)
@@ -43,7 +43,7 @@ class SentenceTransformerEncoder(Encoder):
             ],
             batch_size: int = 8,
             **kwargs
-    ) -> Union[List[Tensor], np.ndarray, Tensor]:
+    ) -> Union[np.ndarray, Tensor]:
         if isinstance(corpus, dict):
             sentences = [
                 (

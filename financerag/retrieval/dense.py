@@ -86,7 +86,7 @@ class DenseRetrieval(Retrieval):
             self,
             model: Encoder,
             batch_size: int = 64,
-            score_functions: Dict[str, Callable[[torch.Tensor, torch.Tensor], torch.Tensor]] = None,
+            score_functions: Dict[str, Callable[[torch.Tensor, torch.Tensor], torch.Tensor]] | None = None,
             corpus_chunk_size: int = 50000
     ):
         """
@@ -116,8 +116,8 @@ class DenseRetrieval(Retrieval):
             corpus: Dict[str, Dict[Literal["title", "text"], str]],
             queries: Dict[str, str],
             top_k: Optional[int] = None,
+            score_function: Literal["cos_sim", "dot"] | None = "cos_sim",
             return_sorted: bool = False,
-            score_function: Literal["cos_sim", "dot"] = "cos_sim",
             **kwargs,
     ) -> Dict[str, Dict[str, float]]:
         """
@@ -193,6 +193,9 @@ class DenseRetrieval(Retrieval):
             cos_scores[torch.isnan(cos_scores)] = -1
 
             # Get top-k values
+            if top_k is None:
+                top_k = len(cos_scores[1])
+
             cos_scores_top_k_values, cos_scores_top_k_idx = torch.topk(
                 cos_scores,
                 min(top_k + 1, len(cos_scores[1])),

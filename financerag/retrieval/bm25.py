@@ -50,9 +50,10 @@ class BM25Retriever(Retrieval):
 
     def retrieve(
             self,
-            corpus: Dict[str, Dict[Literal["id", "title", "text"], str]],
-            queries: Dict[Literal["id", "text"], str],
+            corpus: Dict[str, Dict[Literal["title", "text"], str]],
+            queries: Dict[str, str],
             top_k: Optional[int] = None,
+            score_function: Optional[str] = None,
             return_sorted: bool = False,
             **kwargs
     ) -> Dict[str, Dict[str, float]]:
@@ -62,10 +63,10 @@ class BM25Retriever(Retrieval):
         for each query.
 
         Args:
-            corpus (`Dict[str, Dict[Literal["id", "title", "text"], str]]`):
+            corpus (`Dict[str, Dict[Literal["title", "text"], str]]`):
                 A dictionary representing the corpus, where each key is a document ID, and each value is another dictionary
                 containing document fields such as 'id', 'title', and 'text'.
-            queries (`Dict[Literal["id", "text"], str]`):
+            queries (`Dict[str, str]`):
                 A dictionary containing query IDs and corresponding query texts.
             top_k (`Optional[int]`, *optional*):
                 The number of top documents to return for each query. If not provided, all documents are returned. Defaults to `None`.

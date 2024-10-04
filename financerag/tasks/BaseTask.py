@@ -2,7 +2,7 @@ import csv
 import json
 import logging
 import os
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple
 
 from financerag.common import Generator, HFDataLoader, Reranker, Retrieval
 from financerag.tasks.TaskMetadata import TaskMetadata
@@ -55,7 +55,7 @@ class BaseTask:
         """
         self.metadata: TaskMetadata = metadata
         self.queries: Optional[Dict[str, str]] = None
-        self.corpus: Optional[Dict[str, Dict[str, str]]] = None
+        self.corpus: Optional[Dict[str, Dict[Literal["title", "text"], str]]] = None
         self.retrieve_results: Optional[Dict] = None
         self.rerank_results: Optional[Dict] = None
         self.generate_results: Optional[Dict] = None
@@ -138,7 +138,7 @@ class BaseTask:
             self,
             reranker: Reranker,
             results: Optional[Dict[str, Dict[str, float]]] = None,
-            top_k: Optional[int] = 100,
+            top_k: int = 100,
             batch_size: Optional[int] = None,
             **kwargs,
     ) -> Dict[str, Dict[str, float]]:

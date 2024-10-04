@@ -36,4 +36,4 @@ class FinanceBench(BaseTask):
                 }
             """,
         )
-        super().__init__()
+        super().__init__(metadata=self.metadata)
