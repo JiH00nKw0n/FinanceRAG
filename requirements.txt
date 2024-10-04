@@ -1,5 +1,6 @@
 datasets~=3.0.0
 pydantic~=2.9.2
+pytrec_eval~=0.5
 typing_extensions~=4.12.2
 numpy~=2.1.1
 torch~=2.2.2
