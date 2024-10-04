@@ -6,8 +6,6 @@ from datasets import Dataset, Value, load_dataset
 
 logger = logging.getLogger(__name__)
 
-
-# Adapted from https://github.com/beir-cellar/beir/blob/f062f038c4bfd19a8ca942a9910b1e0d218759d4/beir/datasets/data_loader_hf.py#L10
 class HFDataLoader:
     """
     A Hugging Face Dataset loader for corpus and query data. Supports loading datasets from local files
@@ -27,28 +25,38 @@ class HFDataLoader:
             The filename for the corpus when loading locally.
         query_file (`str`, defaults to `"queries.jsonl"`):
             The filename for the queries when loading locally.
-        streaming (`bool`, defaults to `False`):
-            Whether to stream the dataset. Useful for very large datasets.
         keep_in_memory (`bool`, defaults to `False`):
             Whether to keep the dataset in memory.
     """
 
     def __init__(
-        self,
-        hf_repo: Optional[str] = None,
-        data_folder: Optional[str] = None,
-        subset: Optional[str] = None,
-        prefix: Optional[str] = None,
-        corpus_file: str = "corpus.jsonl",
-        query_file: str = "queries.jsonl",
-        streaming: bool = False,
-        keep_in_memory: bool = False,
+            self,
+            hf_repo: Optional[str] = None,
+            data_folder: Optional[str] = None,
+            subset: Optional[str] = None,
+            prefix: Optional[str] = None,
+            corpus_file: str = "corpus.jsonl",
+            query_file: str = "queries.jsonl",
+            keep_in_memory: bool = False,
     ):
         """
         Initializes the HFDataLoader class.
 
         Args:
-            See class-level docstring for description of arguments.
+            hf_repo (`str`, *optional*):
+                The Hugging Face repository containing the dataset.
+            data_folder (`str`, *optional*):
+                Path to the folder containing the dataset files when loading from local files.
+            subset (`str`, *optional*):
+                The subset of the dataset to load.
+            prefix (`str`, *optional*):
+                A prefix to add to the file names.
+            corpus_file (`str`, defaults to `"corpus.jsonl"`):
+                The filename for the corpus when loading locally.
+            query_file (`str`, defaults to `"queries.jsonl"`):
+                The filename for the queries when loading locally.
+            keep_in_memory (`bool`, defaults to `False`):
+                Whether to keep the dataset in memory.
         """
         self.corpus: Optional[Dataset] = None
         self.queries: Optional[Dataset] = None
@@ -56,15 +64,14 @@ class HFDataLoader:
         self.subset = subset
         if hf_repo:
             logger.warning(
-                "A Hugging Face repository is provided. This will override the data_folder, prefix and *_file arguments."
+                "A Hugging Face repository is provided. This will override the data_folder, prefix, and *_file arguments."
             )
         else:
             if (data_folder is None) or (subset is None):
                 raise ValueError(
-                    "A Hugging Face repository or local directory required."
+                    "A Hugging Face repository or local directory is required."
                 )
 
-            # Set up local file paths
             if prefix:
                 query_file = prefix + "_" + query_file
 
@@ -78,7 +85,7 @@ class HFDataLoader:
                 if data_folder
                 else query_file
             )
-        self.streaming = streaming
+        self.streaming = False
         self.keep_in_memory = keep_in_memory
 
     @staticmethod
@@ -95,12 +102,12 @@ class HFDataLoader:
         """
         if not Path(file_in).exists():
             raise ValueError(
-                "File {} not present! Please provide accurate file.".format(file_in)
+                "File {} not present! Please provide an accurate file.".format(file_in)
             )
 
         if not file_in.endswith(ext):
             raise ValueError(
-                "File {} must be present with extension {}".format(file_in, ext)
+                "File {} must have the extension {}".format(file_in, ext)
             )
 
     def load(self) -> Tuple[Dataset, Dataset]:
@@ -119,15 +126,15 @@ class HFDataLoader:
             logger.info("Loading Corpus...")
             self._load_corpus()
             self.corpus = cast(Dataset, self.corpus)
-            logger.info("Loaded %d TEST Documents.", len(self.corpus))
-            logger.info("Doc Example: %s", self.corpus[0])
+            logger.info("Loaded %d Documents.", len(self.corpus))
+            logger.info("Corpus Example: %s", self.corpus[0])
 
         if self.queries is None:
             logger.info("Loading Queries...")
             self._load_queries()
             self.queries = cast(Dataset, self.queries)
 
-        logger.info("Loaded %d TEST Queries.", len(self.queries))
+        logger.info("Loaded %d Queries.", len(self.queries))
         logger.info("Query Example: %s", self.queries[0])
 
         return self.corpus, self.queries
@@ -147,7 +154,7 @@ class HFDataLoader:
             self._load_corpus()
             self.corpus = cast(Dataset, self.corpus)
             logger.info("Loaded %d Documents.", len(self.corpus))
-            logger.info("Doc Example: %s", self.corpus[0])
+            logger.info("Corpus Example: %s", self.corpus[0])
 
         return self.corpus
 

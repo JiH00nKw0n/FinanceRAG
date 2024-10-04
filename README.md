@@ -15,7 +15,7 @@ pip install -r requirements.txt
 ### (2) Folder/Class Overview
 
 - **`retrieval/`**:
-  - `DenseRetriever`: Retrieves documents based on dense embeddings.
+  - `DenseRetrieval`: Retrieves documents based on dense embeddings.
   - `SentenceTransformerEncoder`: Encodes queries and documents into dense vector representations.
 
 - **`rerank/`**:
@@ -41,7 +41,7 @@ pip install -r requirements.txt
 2. **Setup Models**:
    ```python
    from sentence_transformers import SentenceTransformer
-   from financerag.retrieval import SentenceTransformerEncoder, DenseRetriever
+   from financerag.retrieval import SentenceTransformerEncoder, DenseRetrieval
 
    model = SentenceTransformer('intfloat/e5-large-v2')
    # We need to put prefix for e5 models.
@@ -52,7 +52,7 @@ pip install -r requirements.txt
        query_prompt='query: ',
        doc_prompt='passage: '
    )
-   retriever = DenseRetriever(model=encoder_model)
+   retriever = DenseRetrieval(model=encoder_model)
    ```
 
 3. **Retrieve and Rerank**:
